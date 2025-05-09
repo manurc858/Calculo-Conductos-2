@@ -1,0 +1,761 @@
+/* =============================================
+   Hoja de estilos – Nueva versión 2025 (rev‑5)
+   Autor: ChatGPT (OpenAI o3)
+   Descripción: Rediseño moderno, profesional y dinámico
+   Cambios v1.5:
+      • Botón de cierre de modales vuelve a posicionarse encajado arriba‑derecha (posición absoluta) como en las versiones anteriores.
+      • La sidebar ahora hace scroll vertical propio (oculto) si su contenido sobrepasa la altura de la pantalla.
+   ============================================= */
+
+/****  VARIABLES / TOKENS  ****/
+:root {
+  --color-bg: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-shadow: rgba(0, 0, 0, 0.08);
+  --radius-base: 10px;
+
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --font-base: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --color-primary: #2563eb;
+  --color-primary-dark: #1e40af;
+  --color-secondary: #22c55e;
+  --color-accent: #f97316;
+  --color-danger: #dc2626;
+}
+
+/****  RESET & BASE  ****/
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-base);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  display: flex;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+.shadow-md {
+  box-shadow: 0 4px 12px var(--color-shadow);
+}
+
+.rounded {
+  border-radius: var(--radius-base);
+}
+
+.transition {
+  transition: all .25s ease-in-out;
+}
+
+/************************************************
+   MENÚ LATERAL (izquierdo)
+************************************************/
+#menu {
+  width: 280px;
+  padding: 24px 20px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#menu h2 {
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+  color: var(--color-primary);
+}
+
+/************************************************
+   BOTONES (genéricos)
+************************************************/
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  transition: background .2s ease, transform .1s ease;
+}
+
+button:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+#loadMessage {
+  color: #333;
+  font-size: 14px;
+}
+
+
+/************************************************
+   CANVAS (SVG)
+************************************************/
+#canvas {
+  flex: 1 1 auto;
+  background: #f5f5f5;
+  border: 1px solid var(--color-border);
+  position: relative;
+}
+
+.link {
+  stroke: var(--color-text-muted);
+  stroke-width: 2px;
+  cursor: pointer;
+  transition: stroke .2s ease;
+}
+
+.link:hover {
+  stroke: var(--color-primary);
+}
+
+.link.selected {
+  stroke: var(--color-accent);
+  stroke-width: 3px;
+}
+
+.node circle,
+.node rect {
+  stroke: var(--color-text);
+  stroke-width: 1.5px;
+  cursor: grab;
+  transition: filter .2s ease, transform .2s ease;
+}
+
+.node:hover circle,
+.node:hover rect {
+  filter: drop-shadow(0 2px 4px var(--color-shadow));
+  transform: scale(1.05);
+}
+
+.selected circle,
+.selected rect {
+  stroke: var(--color-accent) !important;
+  stroke-width: 2px;
+}
+
+.node.error circle,
+.node.error rect {
+  stroke: var(--color-danger) !important;
+  fill: #fecaca !important;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    filter: drop-shadow(0 0 2px rgba(220, 38, 38, .4));
+  }
+
+  to {
+    filter: drop-shadow(0 0 6px rgba(220, 38, 38, .7));
+  }
+}
+
+text {
+  font-size: 12px;
+  dominant-baseline: middle;
+  text-anchor: middle;
+  pointer-events: none;
+  fill: var(--color-text);
+}
+
+/************************************************
+   SIDEBAR (derecha) – panel propiedades
+************************************************/
+#sidebar {
+  width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* scroll vertical propio */
+  background: var(--color-surface-alt);
+  border-left: 4px solid var(--color-primary);
+  box-shadow: -4px 0 12px var(--color-shadow);
+  transition: width .35s ease;
+  display: flex;
+  flex-direction: column;
+  margin: 0 12px;
+  border-radius: var(--radius-base);
+  /* Ocultar scrollbar en WebKit*/
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+#sidebar::-webkit-scrollbar {
+  width: 0;
+  /* oculta la barra vertical */
+  height: 0;
+  /* por si hubiera barra horizontal */
+}
+
+#sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#sidebar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+#sidebar.open {
+  width: 340px;
+}
+
+#sidebar h3 {
+  font-size: .875rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  padding: 16px 24px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+#sidebar-content {
+  flex: 1;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* START – estilo especial */
+#startSection {
+  background: #fff5f5;
+  border: 1px solid var(--color-danger);
+  border-left: 5px solid var(--color-danger);
+  border-radius: var(--radius-base);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+#startSection h3 {
+  color: var(--color-danger);
+  font-size: .95rem;
+  margin-bottom: 8px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  position: static;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+#startSection button {
+  background: var(--color-danger);
+  font-size: .75rem;
+  padding: 6px 10px;
+}
+
+#startSection button:hover {
+  background: hsl(0 82% 45% / 1);
+}
+
+/* Botón por defecto: gris */
+.sidebar-btn {
+  background: var(--color-border);
+  color: var(--color-text);
+  border: none;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sidebar-btn:hover {
+  background: #a4a4a4;
+}
+
+.sidebar-btn.active {
+  background: var(--color-secondary);
+  ;
+  color: #fff;
+}
+
+
+/* Tarjetas de lista */
+#listaNudos div,
+#listaUnidades div,
+#listaTerminales div {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 12px 14px;
+  border-radius: var(--radius-base);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+#listaNudos div::before,
+#listaUnidades div::before,
+#listaTerminales div::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+  border-top-left-radius: var(--radius-base);
+  border-bottom-left-radius: var(--radius-base);
+  transition: background .2s ease;
+}
+
+#listaNudos div:hover,
+#listaUnidades div:hover,
+#listaTerminales div:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 6px var(--color-shadow);
+}
+
+#listaNudos div:hover::before,
+#listaUnidades div:hover::before,
+#listaTerminales div:hover::before {
+  background: var(--color-primary);
+}
+
+.list-header {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.badge-error {
+  background: var(--color-danger);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+}
+
+/* Botón toggle sidebar */
+/* --- style.css  | reemplaza la regla de #toggleSidebarBtn por esta --- */
+#toggleSidebarBtn {
+  position: fixed;
+  top: 8px;
+  right: 20px;
+  z-index: 1100;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+
+  /* ↓ Tamaño más compacto */
+  width: 32px;
+  /* antes 44px */
+  height: 32px;
+  /* antes 44px */
+  font-size: 16px;
+  /* antes 20px */
+
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px var(--color-shadow);
+  transition: background .2s ease;
+}
+
+#toggleSidebarBtn:hover {
+  background: var(--color-primary-dark);
+}
+
+/************************************************
+   DOWNBAR (sin cambios)
+************************************************/
+#downbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  background: #ffffff;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, .1);
+  overflow-y: auto;
+  transition: .4s;
+  padding: 0;
+}
+
+#downbar.open {
+  width: 100%;
+  height: 250px;
+  padding: 20px;
+}
+
+#toggleDownbarBtn {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #007aff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+#resizeHandleDown {
+  height: 5px;
+  background: #ccc;
+  cursor: ns-resize;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+/************************************************
+   MODALES – botón de cierre arriba‑derecha
+************************************************/
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  overflow: auto;
+  background: rgba(0, 0, 0, .4);
+}
+
+.modal-content {
+  background: var(--color-surface);
+  margin: 5% auto;
+  padding: 20px;
+  width: 60%;
+  max-width: 800px;
+  border: 1px solid #888;
+  border-radius: var(--radius-base);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .2);
+  overflow: auto;
+  word-break: break-word;
+  white-space: normal;
+  position: relative;
+}
+
+button.danger {
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  padding: 6px 12 px;
+  margin-left: 8px;
+  border-radius: 4px;
+}
+
+.modal-content.wide {
+  width: 640px;
+}
+
+
+
+#constructorCanvas {
+  display: block;
+  margin: 14px auto 0;
+}
+
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  /* ⬅️ vuelve al estilo original */
+  color: var(--color-text-muted);
+  font-size: 24px;
+  font-weight: bold;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.close:hover {
+  color: var(--color-text);
+}
+
+.modal-content button {
+  background: var(--color-primary-dark);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+}
+
+.modal-content button:hover {
+  background: var(--color-primary);
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="number"] {
+  width: 95%;
+  padding: 6px 10px;
+  margin: 6px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  outline: none;
+}
+
+.modal-content label {
+  display: block;
+  margin: 8px 0 4px;
+  font-weight: 500;
+  color: #444;
+}
+
+/************************************************
+   TOOLTIP
+************************************************/
+.tooltip {
+  display: none;
+  position: fixed;
+  background: #333;
+  color: #fff;
+  padding: 5px;
+  border-radius: var(--radius);
+  z-index: 9999;
+  width: 350px;
+  font-size: 14px;
+  pointer-events: none
+}
+
+/************************************************
+   MODO EDICIÓN EN CANVAS
+************************************************/
+#canvas.edit-mode {
+  filter: grayscale(85%) brightness(85%);
+  cursor: crosshair;
+}
+
+#btnEditConductos {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+#btnEditConductos.active {
+  background: var(--color-secondary);
+  color: #fff;
+}
+
+/************************************************
+   TABLAS
+************************************************/
+.table-responsive {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+thead {
+  background: var(--color-surface-alt);
+}
+
+th,
+td {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  font-size: .8125rem;
+}
+
+th {
+  font-weight: 600;
+  text-align: left;
+}
+
+.vel-high {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.p-loss-high {
+  color: #ca8a04;
+  font-weight: 600;
+}
+
+/************************************************
+   ANIMACIONES UTILITARIAS
+************************************************/
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 2. Añade a style.css para el recuadro especial */
+.flow-converter {
+  margin-top: 24px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  border-left: 4px solid var(--color-primary-dark);
+  border-radius: var(--radius-base);
+  box-shadow: 0 2px 6px var(--color-shadow);
+}
+
+.flow-converter h4 {
+  font-size: .9rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--color-primary-dark);
+}
+
+.flow-converter label {
+  font-size: .75rem;
+  color: var(--color-text-muted);
+}
+
+.flow-converter input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+}
+
+/* ---------- Toast de aviso ------------------------------ */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 9999;
+  opacity: .92;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity .3s;
+}
+
+.toast.error {
+  background: #c33;
+}
+
+/* ===== Slider estilizado profesional ===== */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 10px;
+  background: transparent;
+  margin: 8px 0;
+  cursor: pointer;
+  border-radius: 5px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Fondo de la pista (track) → se dibuja por JS */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 5px;
+  background: transparent;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 10px;
+  border-radius: 5px;
+  background: transparent;
+}
+
+/* Puntero (thumb) redondo centrado con sombra */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #999;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+  margin-top: -5px;
+  /* centra el thumb */
+  transition: background 0.3s, border-color 0.3s;
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #999;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover,
+input[type="range"]::-moz-range-thumb:hover {
+  background: #eee;
+  border-color: #666;
+}
+
+/* ---- Botones flotantes Deshacer / Rehacer ---- */
+#undoBtn,
+#redoBtn {
+  position: fixed;
+  bottom: 70px;
+  /* zona inferior */
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 6px var(--color-shadow);
+  transition: background .2s ease;
+}
+
+#undoBtn {
+  right: 74px;
+}
+
+/* separamos los dos círculos */
+#undoBtn:hover,
+#redoBtn:hover {
+  background: var(--color-primary-dark);
+}

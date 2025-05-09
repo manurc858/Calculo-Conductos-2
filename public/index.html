@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Cálculo Conductos</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Librería D3 -->
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <!-- Font Awesome para iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+  <!-- Menú lateral principal -->
+  <div id="menu">
+    <button id="btnVolverMenu" onclick="goBackToMenu()">
+      <i class="fas fa-arrow-left"></i> Volver al Menú
+    </button>
+    <script>
+      function goBackToMenu() {
+        window.location.href = '../menu.html';
+      }
+    </script>
+    <button data-action="addNodo">
+      <i class="fas fa-plus-circle"></i> Añadir Nodo
+    </button>
+    <button data-action="addUnidad">
+      <i class="fas fa-plus-circle"></i> Añadir Unidad
+    </button>
+    <button data-action="addTerminal">
+      <i class="fas fa-plus-circle"></i> Añadir Terminal
+    </button>
+    <button data-action="deleteSelected">
+      <i class="fas fa-trash-alt"></i> Eliminar Seleccionados
+    </button>
+    <button data-action="editConductos" id="btnEditConductos" class="">
+      <i class="fas fa-toggle-off"></i> Editor de Conductos
+    </button>
+    <button id="btnConstructor" class="sidebar-btn">
+      <i class="fas fa-ruler-combined"></i> Constructor de conductos
+    </button>
+
+    <label style="margin-top: 10px;">Material de Conducto:</label>
+    <select id="materialSelect">
+      <option value="0.09">Acero Galvanizado (r=0.09 mm)</option>
+      <option value="0.9">Fibra de vidrio Rígida (r=0.9 mm)</option>
+      <option value="1.5">Aislado int. con fv (r=1.5 mm)</option>
+      <option value="3">Proyectado, Aislado (r=3 mm)</option>
+      <option value="4.5">Proyectado, Sin Aislado (r=4.5 mm)</option>
+      <option value="1.2">Metálico flexible (r=1.2 mm)</option>
+      <option value="0.3">Hormigón (r=0.3 mm)</option>
+      <option value="otro">Otro (r manual)</option>
+    </select>
+
+    <!-- NUEVO: Límite de velocidad -->
+    <label style="margin-top: 10px;">Límite de velocidad (m/s):</label>
+    <input type="number" step="0.1" id="velLimitInput" value="5">
+
+    <button class="info-button" style="margin-top: 15px;" onmousedown="showTooltip()" onmouseup="hideTooltip()">
+      <i class="fas fa-info-circle"></i>
+      Información
+
+      <div id="tooltip" class="tooltip">
+        1. Para comenzar, añade los elementos necesarios y sus características.<br>
+        2. Para crear un conducto haz doble clic sobre un elemento y sigue las instrucciones.<br>
+        3. Los resultados se muestran en la barra de abajo.<br>
+        4. Si quieres editar algún elemento, accede desde la barra lateral.<br>
+        5. Para eliminar conductos o elementos, selecciónalos y verás que están en rojo. Tras esto, haz clic en
+        el botón de eliminar.
+      </div>
+    </button>
+
+    <div id="flowConverter" class="flow-converter">
+      <h4>Conversor de caudal</h4>
+      <label>L/s</label>
+      <input id="inputLps" type="number" step="0.01">
+      <label>m³/h</label>
+      <input id="inputM3h" type="number" step="0.01">
+    </div>
+    <button data-action="exportCsv">
+      <i class="fas fa-file-download"></i> Exportar CSV
+    </button>
+    <button data-action="saveProject"><i class="fas fa-save"></i> Guardar Proyecto</button>
+    <button data-action="loadProject"><i class="fas fa-folder-open"></i> Cargar Proyecto</button>
+    <input type="file" id="projectFile" style="display:none" accept=".json" />
+    <p id="loadMessage" style="margin-top: 10px;">Ecuación de Darcy - Factor de fricción "f" según ecuación de Altshul &
+      Tsal</p>
+
+  </div>
+
+  <script>
+    function showTooltip() {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.style.display = 'block';
+    }
+
+    function hideTooltip() {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.style.display = 'none';
+    }
+  </script>
+
+  <div id="conductoEditModal" class="modal">
+    <div class="modal-content">
+      <span id="closeConductoEdit" class="close">&times;</span>
+      <h2>Editor de Conductos</h2>
+      <div id="conductoEditForm"></div>
+      <button id="confirmConductoEdit">Confirmar</button>
+    </div>
+  </div>
+
+
+  <!-- Área de dibujo (SVG) -->
+  <svg id="canvas" width="800" height="1200">
+    <defs>
+      <filter id="text-shadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+        <feOffset in="blur" dx="1" dy="1" result="offsetBlur" />
+        <feMerge>
+          <feMergeNode in="offsetBlur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
+
+
+
+  <!-- Botón y sidebar -->
+  <button id="toggleSidebarBtn">☰</button>
+  <div id="sidebar" class="closed">
+    <div id="startSection"></div>
+    <!--  <div id="resizeHandle"></div> -->
+    <h3>Nudos</h3>
+    <div id="listaNudos"></div>
+    <h3>Unidades</h3>
+    <div id="listaUnidades"></div>
+    <h3>Terminales</h3>
+    <div id="listaTerminales"></div>
+  </div>
+
+  <!-- Botón y barra inferior -->
+  <button id="toggleDownbarBtn">^</button>
+  <div id="downbar">
+    <div id="resizeHandleDown"></div>
+    <div class="list-header">Caminos desde START</div>
+    <div id="caminosList"></div>
+  </div>
+
+  <!-- MODAL para crear NODOS -->
+  <div id="nodoModal" class="modal">
+    <div class="modal-content">
+      <span id="closeNodoModal" class="close">&times;</span>
+      <h2>Añadir Nudo</h2>
+
+      <label>Tipo de nudo:</label>
+      <div>
+        <input type="radio" name="nodoTipo" value="Codo" checked> Codo
+        <input type="radio" name="nodoTipo" value="Accesorio"> Accesorio
+        <input type="radio" name="nodoTipo" value="Puntual"> Puntual
+      </div>
+
+      <div id="kFactorFields" style="margin-top: 1em;">
+        <label>Factor K:</label>
+        <input type="number" step="0.01" id="inputKFactor" value="0.5">
+        <br>
+        <br>
+        <label>SubTipo:</label>
+        <input type="text" id="inputSubTipo" value="codo 90°">
+        <br>
+      </div>
+
+      <div id="pLossField" style="margin-top: 1em; display: none;">
+        <label>Pérdida (Pa):</label>
+        <input type="number" step="0.1" id="inputPLoss" value="15">
+        <br>
+      </div>
+
+      <button id="confirmAddNodo">Crear</button>
+    </div>
+  </div>
+
+  <!-- MODAL para crear UNIDADES -->
+  <div id="unidadModal" class="modal">
+    <div class="modal-content">
+      <span id="closeUnidadModal" class="close">&times;</span>
+      <h2>Añadir Unidad</h2>
+
+      <label>Nombre (máx 6 carac):</label>
+      <input type="text" id="unidadName" value="U-X">
+      <br>
+      <br>
+      <label>Tipo (VAV, CAV, Fancoil...):</label>
+      <input type="text" id="unidadTipo" value="VAV">
+      <br>
+      <br>
+      <label>Pérdida (Pa):</label>
+      <input type="number" step="0.1" id="unidadPLoss" value="10">
+      <br>
+      <br>
+      <button id="confirmAddUnidad">Crear</button>
+    </div>
+  </div>
+
+  <!-- MODAL para crear TERMINALES -->
+  <div id="terminalModal" class="modal">
+    <div class="modal-content">
+      <span id="closeTerminalModal" class="close">&times;</span>
+      <h2>Añadir Terminal</h2>
+
+      <label>Tipo (Difusor, Rejilla...):</label>
+      <input type="text" id="terminalTipo" value="Difusor">
+      <br>
+      <br>
+      <label>Nombre (ej 1.2.):</label>
+      <input type="text" id="terminalName" value="1.1.">
+      <br>
+      <br>
+      <label>Caudal (m3/h):</label>
+      <input type="number" step="0.1" id="terminalFlow" value="50">
+      <br>
+      <br>
+      <label>Pérdida de Carga (Pa):</label>
+      <input type="number" step="0.1" id="terminalPLoss" value="0">
+      <br><br>
+      <button id="confirmAddTerminal">Crear</button>
+    </div>
+  </div>
+
+  <!-- MODAL para editar propiedades de elementos -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span id="closeEditModal" class="close">&times;</span>
+      <h2>Editar Elemento</h2>
+      <div id="editFormContainer"></div>
+      <button id="confirmEdit">Guardar</button>
+    </div>
+  </div>
+
+  <!-- MODAL para crear CONDUCTO (2 pasos) -->
+  <div id="conductoModal" class="modal">
+    <div class="modal-content">
+      <span id="closeConductoModal" class="close">&times;</span>
+      <h2>Crear Conducto</h2>
+
+      <div id="conductoStep1">
+        <p>Seleccione la forma del conducto:</p>
+        <label>
+          <input type="radio" name="conductoShape" value="circular" checked>
+          Circular
+        </label>
+        <label>
+          <input type="radio" name="conductoShape" value="rectangular">
+          Rectangular
+        </label>
+        <br><br>
+        <button id="btnNextConducto">Siguiente</button>
+      </div>
+
+      <div id="conductoStep2" style="display:none;">
+        <div id="circFields">
+          <label>Diámetro (mm):</label>
+          <input type="number" step="0.1" id="inputDiamConducto" value="250">
+        </div>
+        <div id="rectFields" style="display:none;">
+          <label>Ancho (mm):</label>
+          <input type="number" step="0.1" id="inputRectWidth" value="300">
+          <br>
+          <label>Alto (mm):</label>
+          <input type="number" step="0.1" id="inputRectHeight" value="200">
+        </div>
+        <br>
+        <label>Longitud (m):</label>
+        <input type="number" step="0.1" id="inputLongConducto" value="10">
+        <br>
+        <label>Caudal (m3/h):</label>
+        <input type="number" step="0.1" id="inputFlowConducto" value="100">
+
+        <br><br>
+        <button id="btnBackConducto">Volver</button>
+        <button id="confirmAddConducto">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Constructor de conductos -->
+  <div id="constructorModal" class="modal">
+    <div class="modal-content wide">
+      <span id="closeConstructorModal" class="close">&times;</span>
+      <h2>Constructor de conductos</h2>
+      <label>Límite ΔP&nbsp;(Pa/m):</label>
+      <input type="number" id="c_pa" placeholder="p. ej. 1.5"><br>
+      <label>Caudal&nbsp;(m³/h):</label>
+      <input type="number" id="c_q" placeholder="p. ej. 500"><br>
+      <label>Velocidad máx.&nbsp;(m/s):</label>
+      <input type="number" id="c_v" placeholder="p. ej. 6"><br>
+      <label>Alto máx.&nbsp;(mm):</label>
+      <input type="number" id="c_h" placeholder="p. ej. 100"><br>
+      <hr>
+      <button id="c_calc" class="primary" disabled>Calcular</button>
+      <span id="c_resultado" style="margin-left:12px;">
+        Resultado del Cálculo: —
+      </span>
+      <label style="display:block; margin-top:12px;">
+        Ancho elegido (mm):
+        <span id="c_w_val">--</span>
+      </label>
+      <input type="range" id="c_w_slider" min="50" max="300" step="50" style="width:100%;">
+
+      <p id="c_msg" class="msg"></p> <!-- el mensaje se mantiene -->
+
+      <canvas id="constructorCanvas" width="400" height="300" style="border:1px solid #999; margin-top:10px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación para volver al menú -->
+  <div id="confirmReturnModal" class="modal">
+    <div class="modal-content">
+      <h3>¿Volver al Menú Principal?</h3>
+      <p>Los cambios no guardados se perderán.</p>
+      <div style="text-align:right; margin-top: 20px;">
+        <button id="cancelReturnBtn">Cancelar</button>
+        <button id="confirmReturnBtn" class="danger">Sí, volver</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones Deshacer / Rehacer -->
+  <button id="undoBtn" title="Undo">
+    <i class="fas fa-undo"></i>
+  </button>
+  <button id="redoBtn" title="Redo">
+    <i class="fas fa-redo"></i>
+  </button>
+
+  <!-- Scripts de clases (en tu carpeta "js/classes/") -->
+  <script type="module" src="js/classes/Nodos.js"></script>
+  <script type="module" src="js/classes/Unidades.js"></script>
+  <script type="module" src="js/classes/Terminales.js"></script>
+  <script type="module" src="js/classes/Conducto.js"></script>
+  <script type="module" src="js/classes/Caminos.js"></script>
+  <script type="module" src="js/classes/Constructor.js"></script>
+
+  <!-- Script principal -->
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
